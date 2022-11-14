@@ -1,0 +1,198 @@
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*; // start and stop function available in swing
+import java.util.Random;
+import java.util.Timer.*;
+import java.util.random.*;
+public class gamepanel extends JPanel implements ActionListener
+{
+    static final int screen_width = 600;
+    static final int screen_height = 500;
+    static final int unit_size = 40;
+    static final int game_units = (screen_width*screen_height)/unit_size; // the boxes of the game
+    static final int delay  = 80;
+    final int x[] = new int[game_units]; // x coordinates
+    final int y[] = new int[game_units]; // y coordinates
+    int bodyparts = 5; // the body of snake - starts with 4 parts
+    int applesEaten;
+    int appleX;
+    int appleY;
+    char direction = 'R';
+    boolean running = false;
+    Timer timer;
+    Random random;
+    gamepanel()
+    {
+        random = new Random();
+        this.setPreferredSize(new Dimension(screen_width,screen_height));
+        this.setFocusable(true);
+        this.setBackground(Color.black);
+        this.addKeyListener(new MyKeyAdapter());
+        startGame();
+    }
+    // to start the game
+        public void startGame()
+        {
+         newApple();
+         running = true;
+         timer = new Timer(delay,this);
+         timer.start();
+        }
+        public void paintComponent(Graphics g)
+        {
+       super.paintComponent(g);
+          draw(g);
+        }
+        // to display the figures - apples and snakes
+        public void draw(Graphics g) {
+            if (running) {
+
+                // to set colour of apples and giving it a size
+                g.setColor(Color.red);
+                g.fillOval(appleX, appleY, unit_size, unit_size);
+
+                // to draw head and body of the snake
+                for (int i = 0; i < bodyparts; i++) {
+                    if (i == 0) {
+                        g.setColor(Color.green);
+                        g.fillRect(x[i], y[i], unit_size, unit_size);
+                    } else {
+                        g.setColor(new Color(45, 180, 00));
+//                        g.setColor(new Color(random.nextInt(255))); // this is to get multiple colours in a snake
+                        g.fillRect(x[i], y[i], unit_size, unit_size);
+                    }
+                }
+                g.setColor(Color.blue);
+                g.setFont(new Font("Ink Free",Font.BOLD,20));
+                FontMetrics metrics = getFontMetrics(g.getFont());
+                g.drawString("SCORE  "+applesEaten,(screen_width-metrics.stringWidth("SCORES "+applesEaten))/2,g.getFont().getSize());
+            }
+            else
+            {
+                gameOver(g);
+            }
+        }
+        // after an apple is eaten , this particular section is executed
+        // a new apple is found at a random position
+        public void newApple()
+        {
+            // to get apples at different/random locations during the game
+        appleX = random.nextInt((int)screen_width/unit_size)*unit_size;
+        appleY = random.nextInt((int)screen_height/unit_size)*unit_size;
+        }
+        public void move()
+        {
+            // to allow the snake to move in x and y directions
+        for(int i=bodyparts;i>0;i--)
+        {
+            x[i] = x[i-1];
+            y[i] = y[i-1];
+        }
+        switch (direction)
+        {
+            case 'U':
+                y[0] = y[0] - unit_size;
+                break;
+            case 'D':
+                y[0] = y[0] + unit_size;
+                break;
+            case 'L':
+                x[0] = x[0] - unit_size;
+                break;
+            case 'R':
+                x[0] = x[0] + unit_size;
+                break;
+        }
+        }
+        public void checkApple()
+        {
+        if((x[0] == appleX) && (y[0]==appleY)){
+            bodyparts++;
+            applesEaten++;
+            newApple();
+        }
+        }
+        public void checkCollisions() {
+            // check if head collides the body
+            for (int i = bodyparts; i > 0; i--) {
+                if (x[0] == x[i] && y[0] == y[i]) {
+                    running = false;
+                }
+            }
+            // check if head touches left border
+            if (x[0] < 0) {
+                running = false;
+            }
+            // check if head touches right border
+            if (x[0] > screen_width) {
+                running = false;
+            }
+            // check if head touches top border
+            if(y[0] < 0){
+                y[0] = y[screen_height];
+                running = false;
+            }
+            // check if head touches bottom
+            if(y[0] > screen_height){
+                running = false;
+            }
+
+            if(!running)
+            {
+                timer.stop();
+            }
+        }
+        public void gameOver(Graphics g)
+        {
+            // score
+            g.setColor(Color.blue);
+            g.setFont(new Font("Ink Free",Font.BOLD,40));
+            FontMetrics metrics1 = getFontMetrics(g.getFont());
+            g.drawString("SCORE  "+applesEaten,(screen_width-metrics1.stringWidth("SCORES "+applesEaten))/2,g.getFont().getSize());
+            // game over text
+            g.setColor(Color.red);
+            g.setFont(new Font("Ink Free",Font.BOLD,75));
+            FontMetrics metrics2 = getFontMetrics(g.getFont());
+            g.drawString("GAME OVER",(screen_width-metrics2.stringWidth("GAME OVER"))/2,screen_height/2);
+        }
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+        if(running)
+        {
+            move();
+            checkApple();
+            checkCollisions();
+        }
+        repaint();
+        }
+        // to give directions to the snake
+    public class MyKeyAdapter extends KeyAdapter
+    {
+        @Override
+        public void keyPressed(KeyEvent e) {
+            switch(e.getKeyCode()) {
+                case KeyEvent.VK_LEFT:
+                    if(direction != 'R') {
+                        direction = 'L';
+                    }
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    if(direction != 'L') {
+                        direction = 'R';
+                    }
+                    break;
+                case KeyEvent.VK_UP:
+                    if(direction != 'D') {
+                        direction = 'U';
+                    }
+                    break;
+                case KeyEvent.VK_DOWN:
+                    if(direction != 'U') {
+                        direction = 'D';
+                    }
+                    break;
+            }
+        }
+    }
+}
